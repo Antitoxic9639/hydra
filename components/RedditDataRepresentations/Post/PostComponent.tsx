@@ -21,25 +21,43 @@ import RedditURL, { PageType } from "../../../utils/RedditURL";
 import { useRoute, useURLNavigation } from "../../../utils/navigation";
 import useContextMenu from "../../../utils/useContextMenu";
 import Slideable from "../../UI/Slideable";
+import { FiltersContext } from "../../../contexts/SettingsContexts/FiltersContext";
+import { GesturesContext } from "../../../contexts/SettingsContexts/GesturesContext";
 
 type PostComponentProps = {
   post: Post;
   setPost: (post: Post) => void;
+  deletePost?: () => void;
 };
 
-export default function PostComponent({ post, setPost }: PostComponentProps) {
+export default function PostComponent({
+  post,
+  setPost,
+  deletePost,
+}: PostComponentProps) {
   const { params } = useRoute<URLRoutes>();
   const { pushURL } = useURLNavigation();
   const { theme } = useContext(ThemeContext);
-  const { postCompactMode, subredditAtTop, postTitleLength, postTextLength } =
-    useContext(PostSettingsContext);
+  const {
+    postCompactMode,
+    subredditAtTop,
+    postTitleLength,
+    postTextLength,
+    showPostFlair,
+  } = useContext(PostSettingsContext);
+
+  const { postSwipeOptions } = useContext(GesturesContext);
+
+  const { toggleFilterSubreddit } = useContext(FiltersContext);
 
   const redditURL = params?.url ? new RedditURL(params.url) : null;
 
-  const shouldShowSubreddits =
+  const subreddit = redditURL?.getSubreddit() ?? "";
+  const isPopularOrAll = ["popular", "all"].includes(subreddit);
+  const isOnMultiSubredditPage =
     !redditURL ||
     redditURL.getPageType() !== PageType.SUBREDDIT ||
-    ["popular", "all"].includes(redditURL.getSubreddit());
+    isPopularOrAll;
 
   const seen = isPostSeen(post);
 
@@ -79,20 +97,21 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
       }}
     >
       <Slideable
-        left={[
+        options={[
           {
+            name: "upvote",
             icon: <AntDesign name="arrowup" />,
             color: theme.upvote,
             action: async () => await voteOnPost(VoteOption.UpVote),
           },
           {
+            name: "downvote",
             icon: <AntDesign name="arrowdown" />,
             color: theme.downvote,
             action: async () => await voteOnPost(VoteOption.DownVote),
           },
-        ]}
-        right={[
           {
+            name: "hide",
             icon: <Feather name={seen ? "eye-off" : "eye"} />,
             color: theme.showHide,
             action: async () => {
@@ -100,6 +119,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
             },
           },
           {
+            name: "bookmark",
             icon: <FontAwesome name={post.saved ? "bookmark" : "bookmark-o"} />,
             color: theme.bookmark,
             action: async () => {
@@ -107,7 +127,17 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
               setPost({ ...post, saved: !post.saved });
             },
           },
+          {
+            name: "share",
+            icon: <FontAwesome name="share" />,
+            color: theme.share,
+            action: async () => {
+              Share.share({ url: post.link });
+            },
+          },
         ]}
+        leftNames={[postSwipeOptions.right, postSwipeOptions.farRight]}
+        rightNames={[postSwipeOptions.left, postSwipeOptions.farLeft]}
       >
         <TouchableOpacity
           activeOpacity={0.8}
@@ -130,6 +160,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
                 "Upvote",
                 "Downvote",
                 ...(seen ? ["Mark as Unread"] : ["Mark as Read"]),
+                ...(isPopularOrAll && deletePost ? ["Filter Subreddit"] : []),
                 ...(post.saved ? ["Unsave"] : ["Save"]),
                 "Share",
               ],
@@ -143,6 +174,9 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
               result === "Mark as Read"
             ) {
               setSeenValue(!seen);
+            } else if (result === "Filter Subreddit" && deletePost) {
+              toggleFilterSubreddit(post.subreddit);
+              deletePost();
             } else if (result === "Save" || result === "Unsave") {
               await saveItem(post, !post.saved);
               setPost({ ...post, saved: !post.saved });
@@ -157,7 +191,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
             </View>
           )}
           <View style={styles.bodyContainer}>
-            {subredditAtTop && shouldShowSubreddits && (
+            {subredditAtTop && isOnMultiSubredditPage && (
               <TouchableOpacity
                 style={[
                   styles.subredditAtTopContainer,
@@ -168,7 +202,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
                   pushURL(`https://www.reddit.com/r/${post.subreddit}`)
                 }
               >
-                <SubredditIcon post={post} />
+                <SubredditIcon subredditIcon={post.subredditIcon} />
                 <Text
                   style={[
                     styles.subredditAtTopText,
@@ -193,6 +227,29 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
             >
               {post.title.trim()}
             </Text>
+            {showPostFlair && post.postFlair && (
+              <View
+                style={[
+                  styles.postFlairContainer,
+                  {
+                    marginTop: postCompactMode ? 2 : 5,
+                    marginBottom: postCompactMode ? -3 : -5,
+                    backgroundColor: theme.divider,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.postFlair,
+                    {
+                      color: theme.text,
+                    },
+                  ]}
+                >
+                  {post.postFlair.text}
+                </Text>
+              </View>
+            )}
             <View
               style={[
                 styles.postBody,
@@ -223,7 +280,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
                       ]}
                     />
                   )}
-                  {!subredditAtTop && shouldShowSubreddits && (
+                  {!subredditAtTop && isOnMultiSubredditPage && (
                     <>
                       <TouchableOpacity
                         style={styles.subredditContainer}
@@ -232,7 +289,7 @@ export default function PostComponent({ post, setPost }: PostComponentProps) {
                           pushURL(`https://www.reddit.com/r/${post.subreddit}`)
                         }
                       >
-                        <SubredditIcon post={post} />
+                        <SubredditIcon subredditIcon={post.subredditIcon} />
                         <Text
                           style={[
                             styles.boldedSmallText,
@@ -374,6 +431,14 @@ const styles = StyleSheet.create({
   postTitle: {
     paddingHorizontal: 10,
   },
+  postFlairContainer: {
+    marginLeft: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+    alignSelf: "flex-start",
+  },
+  postFlair: {},
   postBody: {
     flex: 1,
   },

@@ -49,9 +49,12 @@ export default function VideoPlayer({
     currentDataMode === "lowData",
   );
   const [failedToLoadErr, setFailedToLoadErr] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPictureInPicture, setIsPictureInPicture] = useState(false);
 
   const player = useVideoPlayer(source, (player) => {
-    player.muted = true;
+    player.audioMixingMode = "mixWithOthers";
+    player.volume = 0;
     player.loop = true;
     player.timeUpdateEventInterval = 1 / 60;
     if (autoPlayVideos) {
@@ -93,13 +96,20 @@ export default function VideoPlayer({
   });
 
   useEffect(() => {
-    player.muted = true;
-    if (autoPlayVideos) {
-      player.play();
-    } else {
-      player.pause();
-    }
-  }, [source]);
+    player.volume = 0;
+    setTimeout(() => {
+      /**
+       * Adding a timeout to fix this crash:
+       * https://github.com/expo/expo/issues/15329#issuecomment-997283623
+       * https://dimitrie-milinovich.sentry.io/issues/6761973529/?environment=production&query=is%3Aunresolved%20error.unhandled%3ATrue&referrer=issue-stream&statsPeriod=30d
+       */
+      if (autoPlayVideos) {
+        player.play();
+      } else {
+        player.pause();
+      }
+    }, 10);
+  }, [source, autoPlayVideos]);
 
   return (
     <View
@@ -186,26 +196,34 @@ export default function VideoPlayer({
                 <VideoView
                   ref={(videoRef) => {
                     video.current = videoRef;
-                    if (straightToFullscreen) {
-                      videoRef?.enterFullscreen();
-                    }
                   }}
-                  allowsPictureInPicture={true}
+                  allowsPictureInPicture={isFullscreen || isPictureInPicture}
                   player={player}
                   style={styles.video}
-                  onFullscreenEnter={() => (player.muted = false)}
+                  onFullscreenEnter={() => {
+                    setIsFullscreen(true);
+                    player.volume = 1;
+                  }}
                   onFullscreenExit={() => {
-                    player.muted = true;
+                    setIsFullscreen(false);
+                    player.volume = 0;
                     exitedFullScreenCallback?.();
+                    if (autoPlayVideos) {
+                      player.play();
+                    } else {
+                      player.pause();
+                    }
                   }}
                   onPictureInPictureStop={() => {
-                    player.muted = true;
+                    player.volume = 0;
+                    setIsPictureInPicture(false);
                     exitedFullScreenCallback?.();
                   }}
                   onPictureInPictureStart={() => {
+                    setIsPictureInPicture(true);
                     setTimeout(() => {
-                      player.muted = false;
-                    }, 1000);
+                      player.volume = 1;
+                    }, 750);
                   }}
                 />
               </View>

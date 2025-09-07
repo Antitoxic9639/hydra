@@ -37,6 +37,8 @@ export default function Appearance() {
     changePostTextLength,
     linkDescriptionLength,
     changeLinkDescriptionLength,
+    showPostFlair,
+    toggleShowPostFlair,
     blurNSFW,
     toggleBlurNSFW,
     blurSpoilers,
@@ -45,6 +47,8 @@ export default function Appearance() {
     toggleShowPostSummary,
     autoPlayVideos,
     toggleAutoPlayVideos,
+    liveTextInteraction,
+    toggleLiveTextInteraction,
   } = useContext(PostSettingsContext);
 
   const {
@@ -174,13 +178,13 @@ export default function Appearance() {
               <Picker
                 ref={postTextLengthRef}
                 onValueChange={(value: string | number) => {
-                  if (value) {
+                  if (value !== undefined && value !== null) {
                     changePostTextLength(Number(value));
                   }
                 }}
-                items={[...Array(10).keys()].map((i) => ({
-                  label: (i + 1).toString(),
-                  value: i + 1,
+                items={[...Array(10 + 1).keys()].map((i) => ({
+                  label: i.toString(),
+                  value: i,
                 }))}
                 value={postTextLength}
               />
@@ -195,19 +199,35 @@ export default function Appearance() {
               <Picker
                 ref={linkDescriptionLengthRef}
                 onValueChange={(value: string | number) => {
-                  if (value) {
+                  if (value !== undefined && value !== null) {
                     changeLinkDescriptionLength(Number(value));
                   }
                 }}
-                items={[...Array(30).keys()].map((i) => ({
-                  label: (i + 1).toString(),
-                  value: i + 1,
+                items={[...Array(30 + 1).keys()].map((i) => ({
+                  label: i.toString(),
+                  value: i,
                 }))}
                 value={linkDescriptionLength}
               />
             ),
             text: "Link description max lines",
             onPress: () => linkDescriptionLengthRef.current?.togglePicker(true),
+          },
+          {
+            key: "showPostFlair",
+            icon: <AntDesign name="tago" size={24} color={theme.text} />,
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={showPostFlair}
+                onValueChange={() => toggleShowPostFlair()}
+              />
+            ),
+            text: "Show post flairs",
+            onPress: () => toggleShowPostFlair(),
           },
           {
             key: "blurSpoilers",
@@ -296,6 +316,28 @@ export default function Appearance() {
             ),
             text: "Auto play videos",
             onPress: () => toggleAutoPlayVideos(),
+          },
+          {
+            key: "liveTextInteraction",
+            icon: (
+              <MaterialIcons
+                name="document-scanner"
+                size={24}
+                color={theme.text}
+              />
+            ),
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={liveTextInteraction}
+                onValueChange={() => toggleLiveTextInteraction()}
+              />
+            ),
+            text: "Live text",
+            onPress: () => toggleLiveTextInteraction(),
           },
         ]}
       />

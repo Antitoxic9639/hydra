@@ -25,6 +25,7 @@ module.exports = {
       "**/*"
     ],
     ios: {
+      appStoreUrl: "https://apps.apple.com/us/app/hydra-for-reddit/id6478089063",
       supportsTablet: true,
       bundleIdentifier: "com.dmilin.hydra",
       infoPlist: {
@@ -66,6 +67,19 @@ module.exports = {
         {
           "supportsPictureInPicture": true,
         }
+      ],
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "cerberus",
+            "ios": "./assets/images/custom_icons/cerberus.png",
+            "android": {
+              "foregroundImage": "./assets/images/custom_icons/cerberus.png",
+              "backgroundColor": "#FFFFFF",
+            },
+          },
+        ]
       ],
       [
         "react-native-safari-extension",

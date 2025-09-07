@@ -8,6 +8,7 @@ import RedditURL from "../utils/RedditURL";
 import Time from "../utils/Time";
 import URL, { OpenGraphData } from "../utils/URL";
 import { Alert } from "react-native";
+import { formatPostFlair, PostFlair } from "./PostFlair";
 
 export type Poll = {
   voteCount: number;
@@ -30,6 +31,7 @@ export type Post = {
   saved: boolean;
   userVote: VoteOption;
   flair: Flair | null;
+  postFlair: PostFlair | null;
   subreddit: string;
   subredditIcon: string;
   isModerator: boolean;
@@ -63,7 +65,6 @@ export enum VoteOption {
 type GetPostOptions = {
   limit?: number;
   after?: string;
-  search?: string;
 };
 
 export async function formatPostData(child: any): Promise<Post> {
@@ -121,7 +122,10 @@ export async function formatPostData(child: any): Promise<Post> {
   let crossCommentLink = undefined;
   try {
     new RedditURL(child.data.url);
-    if (child.data.url.includes("/comments/")) {
+    if (
+      child.data.url.includes("/comments/") &&
+      !child.data.url.includes(child.data.permalink)
+    ) {
       crossCommentLink = child.data.url;
     }
   } catch (_) {
@@ -200,6 +204,7 @@ export async function formatPostData(child: any): Promise<Post> {
     saved: child.data.saved,
     userVote,
     flair: formatFlair(child.data),
+    postFlair: formatPostFlair(child.data),
     subreddit: child.data.subreddit,
     subredditIcon:
       child.data.sr_detail?.community_icon?.split("?")?.[0] ??
@@ -245,13 +250,7 @@ export async function getPosts(
   url: string,
   options: GetPostOptions = {},
 ): Promise<Post[]> {
-  let redditURL = new RedditURL(url);
-  const subreddit = redditURL.getSubreddit();
-  if (options.search && subreddit) {
-    redditURL = new RedditURL(`https://www.reddit.com/r/${subreddit}/search/`);
-    redditURL.changeQueryParam("q", options.search);
-    redditURL.changeQueryParam("restrict_sr", "true");
-  }
+  const redditURL = new RedditURL(url);
   redditURL.changeQueryParam("sr_detail", "true");
   redditURL.changeQueryParam("limit", String(options?.limit ?? 10));
   redditURL.changeQueryParam("after", options?.after ?? "");
@@ -315,4 +314,23 @@ function handleGatedSubreddit(
       },
     ]);
   });
+}
+
+export async function searchSubredditPosts(
+  url: string,
+  options: GetPostOptions = {},
+): Promise<Post[]> {
+  const redditURL = new RedditURL(url);
+  redditURL.changeQueryParam("restrict_sr", "true");
+  redditURL.changeQueryParam("sr_detail", "true");
+  redditURL.changeQueryParam("limit", String(options?.limit ?? 10));
+  redditURL.changeQueryParam("after", options?.after ?? "");
+  redditURL.jsonify();
+  const response = await api(redditURL.toString());
+  const posts: Post[] = await Promise.all(
+    response.data.children.map(
+      async (child: any) => await formatPostData(child),
+    ),
+  );
+  return posts;
 }

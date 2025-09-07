@@ -18,14 +18,13 @@ import SettingsScreen from "./SettingsScreen";
 import SubredditsScreen from "./SubredditsScreen";
 import UserScreen from "./UserScreen";
 import WebviewScreen from "./WebviewScreen";
-import ConditionalWrapper from "../../components/Other/ConditionalWrapper";
 import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import { StackFutureProvider } from "../../contexts/StackFutureContext";
-import IncomingURLHandler from "../../utils/IncomingURLHandler";
 import SidebarScreen from "./SidebarScreen";
 import WikiScreen from "./WikiScreen";
 import { GesturesContext } from "../../contexts/SettingsContexts/GesturesContext";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import SubredditSearchScreen from "./SubredditSearchScreen";
 
 export type StackParamsList = {
   Subreddits: object;
@@ -37,6 +36,9 @@ export type StackParamsList = {
     url: string;
   };
   PostsPage: {
+    url: string;
+  };
+  SubredditSearchPage: {
     url: string;
   };
   PostDetailsPage: {
@@ -73,6 +75,7 @@ export type URLRoutes =
   | "Home"
   | "PostsPage"
   | "PostDetailsPage"
+  | "SubredditSearchPage"
   | "MultiredditPage"
   | "UserPage"
   | "Accounts"
@@ -87,6 +90,7 @@ const SHOWS_BENEATH_TABS: Record<keyof StackParamsList, boolean> = {
   InboxPage: true,
   MessagesPage: false,
   PostsPage: true,
+  SubredditSearchPage: true,
   PostDetailsPage: true,
   MultiredditPage: true,
   UserPage: true,
@@ -119,6 +123,7 @@ export default function Stack() {
     InboxScreen,
     MessagesScreen,
     PostsScreen,
+    SubredditSearchScreen,
     PostDetailsScreen,
     MultiredditScreen,
     UserScreen,
@@ -150,14 +155,9 @@ export default function Stack() {
           backgroundColor: theme.background,
         },
       })}
-      screenLayout={({ children, route }) => (
+      screenLayout={({ children }) => (
         <StackFutureProvider futureRoutes={futureRoutes}>
-          <ConditionalWrapper
-            condition={route.name === "Subreddits"}
-            wrapper={IncomingURLHandler}
-          >
-            {children}
-          </ConditionalWrapper>
+          {children}
         </StackFutureProvider>
       )}
     >

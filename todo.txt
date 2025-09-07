@@ -13,13 +13,7 @@
 
 - 🚀 Endpoint caching, future navigation stack state caching
 
-- 🚀 Post flairs (create post with flair and edit it)
-
 - 🚀 Fancy bookmarks with folders and categories (available in Reddit API)
-
-- 🚀 Subreddit sidebars (wiki, rules, etc.)
-
-- 🚀 Swipe to navigate support
 
 - 🚀⭐ Save posts and comments as image (https://www.reddit.com/r/HydraFeatureRequests/comments/1ifk8dx/save_as_image/)
 
@@ -38,17 +32,11 @@
 
 - 🚀 Change swipe actions
 
-- 🚀 Block specific subreddits from appearing
-
 - 🐛 Enable landscape mode in the browser
 
-- 🚀 Use the faster post search API
-
-- 🐛 Searching subreddit then sorting is broken (https://www.reddit.com/r/HydraApp/comments/1klcmbc/searching_then_sorting_should_not_remove_the/)
+- 🚀 Add option to open links in device browser instead of in app browser
 
 ### Easy
-- 🐛 Sort icon doesn't change when sorting in multireddit
-
 - 🐛 Editing a comment on the user page then clicking the link causes a crash
 
 - 🐛 Favorite subreddits you aren't subscribed to
@@ -60,5 +48,3 @@
 - 🐛 Rapid double backwards swipe to the Subreddits page causes weird glitch (https://discord.com/channels/1257191666771558492/1257773342283268297/1347806977748766750)
 
 - 🚀 Add link to /r/friends (https://www.reddit.com/r/HydraApp/comments/1jt0wcw/possibility_to_see_rfriends/)
-
-- 🐛 Figured out how to push to a tab stack from outside the stack context. Check GetHydraProButton for how. Refactor the useNavigation() hook to use this new method.

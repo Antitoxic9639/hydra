@@ -6,9 +6,10 @@ import {
   Entypo,
 } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { SplashScreen } from "expo-router";
-import React, { useContext, useEffect } from "react";
+import { SplashScreen, useNavigation } from "expo-router";
+import React, { useContext, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { NavigationContainerRef, StackActions } from "@react-navigation/native";
 
 import LoadingSplash from "../../components/UI/LoadingSplash";
 import { AccountContext } from "../../contexts/AccountContext";
@@ -17,6 +18,12 @@ import { TabSettingsContext } from "../../contexts/SettingsContexts/TabSettingsC
 import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import Stack from "../stack";
 import { TabScrollContext } from "../../contexts/TabScrollContext";
+import useHandleIncomingURLs from "../../utils/useHandleIncomingURLs";
+import { AppNavigationProp } from "../../utils/navigationTypes";
+import { expoDb } from "../../db";
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
+import QuickSubredditSearch from "../../components/Modals/QuickSubredditSearch";
+import { oneTimeAlert } from "../../utils/oneTimeAlert";
 
 export type TabParamsList = {
   Posts: undefined;
@@ -29,11 +36,24 @@ export type TabParamsList = {
 const Tab = createBottomTabNavigator();
 
 export default function Tabs() {
+  if (__DEV__) {
+    // Not a real conditional render since __DEV__ is a compile time constant
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useDrizzleStudio(expoDb);
+    // This is here because the db must be set up before the hook is used
+  }
+
+  const navigation = useNavigation<NavigationContainerRef<AppNavigationProp>>();
+
   const { theme } = useContext(ThemeContext);
   const { loginInitialized, currentUser } = useContext(AccountContext);
   const { inboxCount } = useContext(InboxContext);
   const { showUsername } = useContext(TabSettingsContext);
   const { tabBarTranslateY } = useContext(TabScrollContext);
+
+  const [showSubredditSearch, setShowSubredditSearch] = useState(false);
+
+  useHandleIncomingURLs();
 
   useEffect(() => {
     if (loginInitialized) {
@@ -46,6 +66,10 @@ export default function Tabs() {
       style={{ flex: 1, backgroundColor: theme.background }}
       edges={["right", "top", "left"]}
     >
+      <QuickSubredditSearch
+        show={showSubredditSearch}
+        onExit={() => setShowSubredditSearch(false)}
+      />
       {loginInitialized ? (
         <Tab.Navigator
           screenOptions={{
@@ -57,6 +81,30 @@ export default function Tabs() {
               transform: [{ translateY: tabBarTranslateY }],
             },
           }}
+          screenListeners={() => ({
+            tabPress: (e) => {
+              const state = navigation.getState();
+              const stackItem = state.routes[state.index];
+              const isCurrentTab = stackItem.key === e.target;
+              const stackHeight = stackItem.state?.index;
+              if (isCurrentTab && stackHeight && stackHeight > 0) {
+                navigation.dispatch(StackActions.pop());
+                e.preventDefault();
+              }
+              if (e.target?.startsWith("Search")) {
+                oneTimeAlert(
+                  "quickSearchGuideAlert",
+                  "Did you know?",
+                  "You can quick search for subreddits by long pressing the search tab.",
+                );
+              }
+            },
+            tabLongPress: (e) => {
+              if (e.target?.startsWith("Search")) {
+                setShowSubredditSearch(true);
+              }
+            },
+          })}
         >
           <Tab.Screen
             name="Posts"
