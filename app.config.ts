@@ -1,6 +1,6 @@
 import packageJson from './package.json';
 
-const projectId = "7e403d7f-7747-4daa-a3c9-4acb948f7a60";
+const projectId = "2b6189c2-7a11-4638-9028-e1276c014727";
 const IS_DEV = process.env.APP_VARIANT === 'development';
 
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
     ios: {
       appStoreUrl: "https://apps.apple.com/us/app/hydra-for-reddit/id6478089063",
       supportsTablet: true,
-      bundleIdentifier: "com.dmilin.hydra",
+      bundleIdentifier: "com.ibbe.hydra",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
@@ -47,7 +47,7 @@ module.exports = {
         projectId,
       }
     },
-    owner: "dmilin",
+    owner: "testaraaa",
     plugins: [
       "expo-router",
       [

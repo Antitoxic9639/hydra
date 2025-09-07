@@ -2,17 +2,11 @@ import { createContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import Purchases, {
   CustomerInfo,
-  CustomerInfoUpdateListener,
   PurchasesPackage,
 } from "react-native-purchases";
 
 import { registerCustomer } from "../api/Customer";
 import { USING_CUSTOM_HYDRA_SERVER } from "../constants/HydraServer";
-
-Purchases.setLogLevel(Purchases.LOG_LEVEL.ERROR);
-Purchases.configure({
-  apiKey: "appl_okkBpjboHClPttmFHfsSWRaGSFd",
-});
 
 const HYDRA_299_1M_PRODUCT_ID = "hydra_299_1m";
 const HYDRA_PRO_ENTITLEMENT = "Hydra Pro";
@@ -46,6 +40,32 @@ const initialSubscriptionContext: SubscriptionContextType = {
 export const SubscriptionsContext = createContext(initialSubscriptionContext);
 
 export function SubscriptionsProvider({ children }: React.PropsWithChildren) {
+  // skip RevenueCat cussing error when i change bundleIdentifier
+  if (USING_CUSTOM_HYDRA_SERVER) {
+    useEffect(() => {
+      registerCustomer({ customerId: "custom-server-user" });
+    }, []);
+
+    return (
+      <SubscriptionsContext.Provider
+        value={{
+          purchasesInitialized: true,
+          customerInfo: null,
+          customerId: "custom-server-user",
+          isPro: true,
+          buyPro: async () => {},
+          proOffering: null,
+          getCustomerInfo: async () => {},
+          isLoadingOffering: false,
+          inGracePeriod: false,
+          gracePeriodEndsAt: null,
+        }}
+      >
+        {children}
+      </SubscriptionsContext.Provider>
+    );
+  }
+
   const [purchasesInitialized, setPurchasesInitialized] = useState(
     initialSubscriptionContext.purchasesInitialized,
   );
@@ -125,9 +145,7 @@ export function SubscriptionsProvider({ children }: React.PropsWithChildren) {
   useEffect(() => {
     getCustomerInfo();
     loadOffering();
-    const handleCustomerInfoUpdate: CustomerInfoUpdateListener = async (
-      customerInfo,
-    ) => {
+    const handleCustomerInfoUpdate = async (customerInfo: CustomerInfo) => {
       setCustomerInfo(customerInfo);
     };
     Purchases.addCustomerInfoUpdateListener(handleCustomerInfoUpdate);

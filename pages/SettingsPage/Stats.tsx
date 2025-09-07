@@ -467,7 +467,7 @@ export default function Stats() {
           ))}
       </View>
 
-      {topSubreddits.length > 0 && (
+      {topSubreddits.length < 0 && (
         <>
           <SectionTitle text="Your Favorite Communities" />
           <View
