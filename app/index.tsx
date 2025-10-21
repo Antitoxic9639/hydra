@@ -16,7 +16,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { enableFreeze } from "react-native-screens";
 
 import Tabs from "./tabs";
-import SubscribeToHydra from "../components/Modals/SubscribeToHydra";
 import { AccountProvider } from "../contexts/AccountContext";
 import { InboxProvider } from "../contexts/InboxContext";
 import { MediaViewerProvider } from "../contexts/MediaViewerContext";
@@ -33,6 +32,7 @@ import KeyStore from "../utils/KeyStore";
 import { TabScrollProvider } from "../contexts/TabScrollContext";
 import { StartupModalProvider } from "../contexts/StartupModalContext";
 import { modifyStat, Stat } from "../db/functions/Stats";
+import ScrollToNextButtonProvider from "../contexts/ScrollToNextButtonProvider";
 
 LogBox.ignoreLogs([
   "Require cycle: ",
@@ -102,20 +102,21 @@ function RootLayout() {
             <SettingsProvider>
               <TabScrollProvider>
                 <NavigationProvider>
-                  <ActionSheetProvider>
-                    <InboxProvider>
-                      <ModalProvider>
-                        <MediaViewerProvider>
-                          <SubredditProvider>
-                            <StartupModalProvider>
-                              <SubscribeToHydra />
-                              <Tabs />
-                            </StartupModalProvider>
-                          </SubredditProvider>
-                        </MediaViewerProvider>
-                      </ModalProvider>
-                    </InboxProvider>
-                  </ActionSheetProvider>
+                  <ScrollToNextButtonProvider>
+                    <ActionSheetProvider>
+                      <InboxProvider>
+                        <ModalProvider>
+                          <MediaViewerProvider>
+                            <SubredditProvider>
+                              <StartupModalProvider>
+                                <Tabs />
+                              </StartupModalProvider>
+                            </SubredditProvider>
+                          </MediaViewerProvider>
+                        </ModalProvider>
+                      </InboxProvider>
+                    </ActionSheetProvider>
+                  </ScrollToNextButtonProvider>
                 </NavigationProvider>
               </TabScrollProvider>
             </SettingsProvider>
