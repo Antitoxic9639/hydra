@@ -8,7 +8,7 @@ import {
   Share,
   AccessibilityInfo,
 } from "react-native";
-import * as WebBrowser from "expo-web-browser";
+import { openExternalLink } from "../../../utils/openExternalLink";
 
 import CompactPostMedia from "./PostParts/CompactPostMedia";
 import PostMedia from "./PostParts/PostMedia";
@@ -113,7 +113,7 @@ export default function PostComponent({
           new RedditURL(post.externalLink);
           pushURL(post.externalLink);
         } catch (_) {
-          WebBrowser.openBrowserAsync(post.externalLink);
+          openExternalLink(post.externalLink);
         }
       },
     },
@@ -210,13 +210,15 @@ export default function PostComponent({
         options={[
           {
             name: "upvote",
-            icon: <AntDesign name="arrowup" />,
+            icon: <Feather name="arrow-up" />,
+            size: 38,
             color: theme.upvote,
             action: () => handleAction("Upvote"),
           },
           {
             name: "downvote",
-            icon: <AntDesign name="arrowdown" />,
+            icon: <Feather name="arrow-down" />,
+            size: 38,
             color: theme.downvote,
             action: () => handleAction("Downvote"),
           },
