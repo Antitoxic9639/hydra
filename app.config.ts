@@ -30,7 +30,6 @@ module.exports = {
       bundleIdentifier: "com.ibbe.hydra",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        UIDesignRequiresCompatibility: true,
       },
     },
     android: {
