@@ -3,6 +3,7 @@ import {
   Feather,
   FontAwesome,
   Ionicons,
+  MaterialCommunityIcons,
   Octicons,
 } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -59,6 +60,7 @@ interface CommentProps {
   displayInList?: boolean; // Changes render style for use in something like a list of user comments,
   changeComment: (comment: Comment) => void;
   deleteComment: (comment: Comment) => void;
+  collapseThread: (comment: Comment) => void;
 
   // This comment prop ref thing is horrific. Don't do it. We're using it so
   // the post details page can reach into the comments inside of it to get to
@@ -74,12 +76,11 @@ export function CommentComponent({
   displayInList,
   changeComment,
   deleteComment,
+  collapseThread,
   commentPropRef,
 }: CommentProps) {
   const { theme } = useContext(ThemeContext);
-  const { voteIndicator, collapseAutoModerator, commentFlairs } = useContext(
-    CommentSettingsContext,
-  );
+  const { voteIndicator, commentFlairs } = useContext(CommentSettingsContext);
   const { commentSwipeOptions } = useContext(GesturesContext);
   const { doesCommentPassTextFilter } = useContext(FiltersContext);
   const { pushURL } = useURLNavigation();
@@ -98,12 +99,16 @@ export function CommentComponent({
     commentPropRef.current = commentRef.current;
   }
 
-  const [collapsed, setCollapsed] = useState(
-    collapseAutoModerator &&
-      comment.depth === 0 &&
-      comment.author === "AutoModerator",
-  );
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const toggleCollapse = () => {
+    if (comment.type !== "comment") return;
+    changeComment?.({
+      ...comment,
+      collapsed: !comment.collapsed,
+      renderCount: comment.renderCount + 1,
+    });
+  };
 
   const voteOnComment = async (voteOption: VoteOption) => {
     if (comment.type === "comment") {
@@ -184,6 +189,8 @@ export function CommentComponent({
     const options = [
       "Upvote",
       "Downvote",
+      ...(comment.collapsed ? ["Expand"] : ["Collapse"]),
+      "Collapse Thread",
       "Select Text",
       "Reply",
       ...(comment.saved ? ["Unsave"] : ["Save"]),
@@ -196,6 +203,10 @@ export function CommentComponent({
       await voteOnComment(VoteOption.UpVote);
     } else if (result === "Downvote") {
       await voteOnComment(VoteOption.DownVote);
+    } else if (result === "Collapse" || result === "Expand") {
+      toggleCollapse();
+    } else if (result === "Collapse Thread" && comment.type === "comment") {
+      collapseThread(comment);
     } else if (result === "Reply") {
       replyToComment();
     } else if (result === "Save" || result === "Unsave") {
@@ -263,11 +274,24 @@ export function CommentComponent({
                   name: "collapse",
                   icon: (
                     <Ionicons
-                      name={collapsed ? "chevron-expand" : "chevron-collapse"}
+                      name={
+                        comment.collapsed
+                          ? "chevron-expand"
+                          : "chevron-collapse"
+                      }
                     />
                   ),
                   color: theme.collapse,
-                  action: () => setCollapsed(!collapsed),
+                  action: () => toggleCollapse(),
+                },
+                {
+                  name: "collapseThread",
+                  icon: <MaterialCommunityIcons name="arrow-collapse-all" />,
+                  color: theme.collapse,
+                  action: () => {
+                    if (comment.type !== "comment") return;
+                    collapseThread(comment);
+                  },
                 },
               ]}
               leftNames={[
@@ -300,12 +324,12 @@ export function CommentComponent({
                   } else {
                     commentRef.current?.measureInWindow(
                       (_x, y, _width_, _height) => {
-                        if (!collapsed && scrollChange) {
+                        if (!comment.collapsed && scrollChange) {
                           scrollChange(y);
                         }
                       },
                     );
-                    setCollapsed(!collapsed);
+                    toggleCollapse();
                   }
                 }}
                 onLongPress={() => showCommentOptions()}
@@ -346,7 +370,7 @@ export function CommentComponent({
                     style={[
                       styles.topBar,
                       {
-                        marginBottom: collapsed ? 0 : 8,
+                        marginBottom: comment.collapsed ? 0 : 8,
                       },
                     ]}
                   >
@@ -438,13 +462,16 @@ export function CommentComponent({
                       </TouchableOpacity>
                     )}
                     {commentFlairs && comment.flair && (
-                      <View
+                      <TouchableOpacity
                         style={[
                           styles.flairContainer,
                           {
                             backgroundColor: theme.divider,
                           },
                         ]}
+                        onPress={() =>
+                          alert(comment.flair?.text ?? "No flair text")
+                        }
                       >
                         {comment.flair.emojis.map((emoji, index) => (
                           <Image
@@ -466,7 +493,7 @@ export function CommentComponent({
                             {comment.flair.text}
                           </Text>
                         )}
-                      </View>
+                      </TouchableOpacity>
                     )}
                     <View style={styles.topBarEnd}>
                       <Text
@@ -481,7 +508,7 @@ export function CommentComponent({
                       </Text>
                     </View>
                   </View>
-                  {!collapsed ? (
+                  {!comment.collapsed ? (
                     <View style={styles.textContainer}>
                       <RenderHtml html={comment.html} />
                     </View>
@@ -535,7 +562,7 @@ export function CommentComponent({
               </TouchableHighlight>
             </Slideable>
           )}
-          {!collapsed ? (
+          {!comment.collapsed ? (
             <>
               {comment.comments.length > 0 &&
                 comment.comments.map((childComment, childIndex) => (
@@ -547,6 +574,7 @@ export function CommentComponent({
                     scrollChange={scrollChange}
                     changeComment={changeComment}
                     deleteComment={deleteComment}
+                    collapseThread={collapseThread}
                     commentPropRef={{ current: null }}
                   />
                 ))}
@@ -617,7 +645,7 @@ export function CommentComponent({
       isFiltered,
       commentFlairs,
       loadingMore,
-      collapsed,
+      comment.collapsed,
       comment,
       comment.renderCount,
       theme,
@@ -631,6 +659,7 @@ interface CommentsProps {
   scrollChange: (y: number) => void;
   changeComment: (comment: Comment) => void;
   deleteComment: (comment: Comment) => void;
+  collapseThread: (comment: Comment) => void;
 }
 
 const Comments = forwardRef(
@@ -641,6 +670,7 @@ const Comments = forwardRef(
       scrollChange,
       changeComment,
       deleteComment,
+      collapseThread,
     }: CommentsProps,
     ref: ForwardedRef<View>,
   ) => {
@@ -664,6 +694,7 @@ const Comments = forwardRef(
           scrollChange={scrollChange}
           changeComment={changeComment}
           deleteComment={deleteComment}
+          collapseThread={collapseThread}
         />
       </View>
     );
