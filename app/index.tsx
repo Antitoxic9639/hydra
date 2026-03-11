@@ -34,6 +34,7 @@ import { TabScrollProvider } from "../contexts/TabScrollContext";
 import { StartupModalProvider } from "../contexts/StartupModalContext";
 import { modifyStat, Stat } from "../db/functions/Stats";
 import { ActionSheetBgProvider } from "../contexts/ActionSheetBgProvider";
+import VideoCache from "../utils/VideoCache";
 
 LogBox.ignoreLogs([
   "Require cycle: ",
@@ -77,6 +78,7 @@ function RootLayout() {
 
   const doDBMaintenanceAsync = async () => {
     await doDBMaintenance();
+    await VideoCache.clearCacheIfRequested();
     setDbMaintenanceDone(true);
   };
 
@@ -85,11 +87,17 @@ function RootLayout() {
       doDBMaintenanceAsync();
       modifyStat(Stat.APP_LAUNCHES, 1);
       modifyStat(Stat.APP_FOREGROUNDS, 1);
-      AppState.addEventListener("change", (state) => {
-        if (state === "active") {
-          modifyStat(Stat.APP_FOREGROUNDS, 1);
-        }
-      });
+      const appStateChangeListener = AppState.addEventListener(
+        "change",
+        (state) => {
+          if (state === "active") {
+            modifyStat(Stat.APP_FOREGROUNDS, 1);
+          }
+        },
+      );
+      return () => {
+        appStateChangeListener.remove();
+      };
     }
   }, [migrationsComplete]);
 

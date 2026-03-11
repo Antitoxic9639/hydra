@@ -33,6 +33,7 @@ module.exports = {
       },
     },
     android: {
+      package: "com.dmilin.hydra",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#000000"
@@ -63,12 +64,6 @@ module.exports = {
       ],
       'expo-notifications',
       [
-        'expo-video',
-        {
-          "supportsPictureInPicture": true,
-        }
-      ],
-      [
         "expo-alternate-app-icons",
         [
           {
@@ -77,6 +72,22 @@ module.exports = {
             "android": {
               "foregroundImage": "./assets/images/custom_icons/cerberus.png",
               "backgroundColor": "#FFFFFF",
+            },
+          },
+          {
+            "name": "hail_hydra",
+            "ios": "./assets/images/custom_icons/hail_hydra.png",
+            "android": {
+              "foregroundImage": "./assets/images/custom_icons/hail_hydra.png",
+              "backgroundColor": "#FFFFFF",
+            },
+          },
+          {
+            "name": "hail_hydra_dark",
+            "ios": "./assets/images/custom_icons/hail_hydra_dark.png",
+            "android": {
+              "foregroundImage": "./assets/images/custom_icons/hail_hydra_dark.png",
+              "backgroundColor": "#000000",
             },
           },
         ]

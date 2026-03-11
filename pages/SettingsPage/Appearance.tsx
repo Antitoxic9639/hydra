@@ -5,6 +5,7 @@ import {
   Entypo,
   MaterialIcons,
   Feather,
+  Ionicons,
 } from "@expo/vector-icons";
 import React, { useContext } from "react";
 import { Alert, Switch, View } from "react-native";
@@ -17,12 +18,16 @@ import { ThemeContext } from "../../contexts/SettingsContexts/ThemeContext";
 import { SubscriptionsContext } from "../../contexts/SubscriptionsContext";
 import { useURLNavigation } from "../../utils/navigation";
 import { useSettingsPicker } from "../../utils/useSettingsPicker";
+import { useSplitViewSupport } from "../../utils/useSplitViewSupport";
 
 export default function Appearance() {
   const { theme } = useContext(ThemeContext);
   const { isPro } = useContext(SubscriptionsContext);
 
   const { pushURL } = useURLNavigation();
+
+  const { deviceSupportsSplitView, splitViewEnabled, setSplitViewEnabled } =
+    useSplitViewSupport();
 
   const {
     postCompactMode,
@@ -49,6 +54,8 @@ export default function Appearance() {
     toggleAutoPlayVideos,
     liveTextInteraction,
     toggleLiveTextInteraction,
+    tapToCollapsePost,
+    toggleTapToCollapsePost,
   } = useContext(PostSettingsContext);
 
   const {
@@ -60,6 +67,8 @@ export default function Appearance() {
     toggleCommentFlairs,
     showCommentSummary,
     toggleShowCommentSummary,
+    tapToCollapseComment,
+    toggleTapToCollapseComment,
   } = useContext(CommentSettingsContext);
 
   const {
@@ -147,6 +156,23 @@ export default function Appearance() {
             ),
             text: "Make posts compact",
             onPress: () => togglePostCompactMode(),
+          },
+          {
+            key: "splitViewEnabled",
+            hide: !deviceSupportsSplitView,
+            icon: <AntDesign name="split-cells" size={24} color={theme.text} />,
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={splitViewEnabled}
+                onValueChange={() => setSplitViewEnabled(!splitViewEnabled)}
+              />
+            ),
+            text: "Enable split view",
+            onPress: () => setSplitViewEnabled(!splitViewEnabled),
           },
           {
             key: "subredditAtTop",
@@ -329,6 +355,24 @@ export default function Appearance() {
             text: "Live text",
             onPress: () => toggleLiveTextInteraction(),
           },
+          {
+            key: "tapToCollapsePost",
+            icon: (
+              <Ionicons name="chevron-collapse" size={24} color={theme.text} />
+            ),
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={tapToCollapsePost}
+                onValueChange={() => toggleTapToCollapsePost()}
+              />
+            ),
+            text: "Tap to collapse",
+            onPress: () => toggleTapToCollapsePost(),
+          },
         ]}
       />
       <View style={{ marginTop: 5 }} />
@@ -424,6 +468,24 @@ export default function Appearance() {
                 );
               }
             },
+          },
+          {
+            key: "tapToCollapseComment",
+            icon: (
+              <Ionicons name="chevron-collapse" size={24} color={theme.text} />
+            ),
+            rightIcon: (
+              <Switch
+                trackColor={{
+                  false: theme.iconSecondary,
+                  true: theme.iconPrimary,
+                }}
+                value={tapToCollapseComment}
+                onValueChange={() => toggleTapToCollapseComment()}
+              />
+            ),
+            text: "Tap to collapse",
+            onPress: () => toggleTapToCollapseComment(),
           },
         ]}
       />

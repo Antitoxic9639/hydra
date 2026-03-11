@@ -1,8 +1,9 @@
 import { createContext } from "react";
 import { useMMKVBoolean, useMMKVNumber } from "react-native-mmkv";
+import { deviceSupportsSplitView } from "../../utils/useSplitViewSupport";
 
 const initialValues = {
-  postCompactMode: false,
+  postCompactMode: deviceSupportsSplitView,
   subredditAtTop: false,
   showSubredditIcon: true,
   postTitleLength: 2,
@@ -14,6 +15,7 @@ const initialValues = {
   showPostSummary: true,
   autoPlayVideos: true,
   liveTextInteraction: false,
+  tapToCollapsePost: true,
 };
 
 const initialPostSettingsContext = {
@@ -30,6 +32,7 @@ const initialPostSettingsContext = {
   toggleShowPostSummary: (_newValue?: boolean) => {},
   toggleAutoPlayVideos: (_newValue?: boolean) => {},
   toggleLiveTextInteraction: (_newValue?: boolean) => {},
+  toggleTapToCollapsePost: (_newValue?: boolean) => {},
 };
 
 export const PostSettingsContext = createContext(initialPostSettingsContext);
@@ -89,6 +92,11 @@ export function PostSettingsProvider({ children }: React.PropsWithChildren) {
   const liveTextInteraction =
     storedliveTextInteraction ?? initialValues.liveTextInteraction;
 
+  const [storedTapToCollapsePost, setTapToCollapsePost] =
+    useMMKVBoolean("tapToCollapsePost");
+  const tapToCollapsePost =
+    storedTapToCollapsePost ?? initialValues.tapToCollapsePost;
+
   return (
     <PostSettingsContext.Provider
       value={{
@@ -139,6 +147,10 @@ export function PostSettingsProvider({ children }: React.PropsWithChildren) {
           liveTextInteraction ?? initialValues.liveTextInteraction,
         toggleLiveTextInteraction: (newValue = !liveTextInteraction) =>
           setliveTextInteraction(newValue),
+
+        tapToCollapsePost: tapToCollapsePost ?? initialValues.tapToCollapsePost,
+        toggleTapToCollapsePost: (newValue = !tapToCollapsePost) =>
+          setTapToCollapsePost(newValue),
       }}
     >
       {children}

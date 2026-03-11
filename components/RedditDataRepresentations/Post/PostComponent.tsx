@@ -33,19 +33,22 @@ import Slideable from "../../UI/Slideable";
 import { FiltersContext } from "../../../contexts/SettingsContexts/FiltersContext";
 import { GesturesContext } from "../../../contexts/SettingsContexts/GesturesContext";
 import useComponentActions from "../../../utils/useComponentActions";
+import useContextMenu from "../../../utils/useContextMenu";
 
 type PostComponentProps = {
   post: Post;
   setPost: (post: Post) => void;
   deletePost?: () => void;
+  onPostOpen?: (url: string) => void;
 };
 
 export default function PostComponent({
   post,
   setPost,
   deletePost,
+  onPostOpen,
 }: PostComponentProps) {
-  const { params } = useRoute<URLRoutes>();
+  const { params } = useRoute<URLRoutes | "SearchPage">();
   const { pushURL } = useURLNavigation();
   const { theme } = useContext(ThemeContext);
   const {
@@ -60,9 +63,12 @@ export default function PostComponent({
 
   const { toggleFilterSubreddit } = useContext(FiltersContext);
 
-  const redditURL = params?.url ? new RedditURL(params.url) : null;
+  const openContextMenu = useContextMenu();
 
-  const isOnMultiSubredditPage = redditURL?.isCombinedSubredditFeed() ?? false;
+  const isOnMultiSubredditPage =
+    params && "url" in params && params.url
+      ? new RedditURL(params.url).isCombinedSubredditFeed()
+      : true;
 
   const seen = isPostSeen(post);
 
@@ -129,7 +135,23 @@ export default function PostComponent({
       label: "Filter Subreddit",
       isAllowed: !!deletePost,
       handle: async () => {
-        toggleFilterSubreddit(post.subreddit);
+        const result = await openContextMenu({
+          options: [
+            "Filter for a day",
+            "Filter for a week",
+            "Filter forever",
+          ] as const,
+        });
+        if (!result) return;
+        let expiresAt: number | true;
+        if (result === "Filter for a day") {
+          expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+        } else if (result === "Filter for a week") {
+          expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        } else {
+          expiresAt = true;
+        }
+        toggleFilterSubreddit(post.subreddit, expiresAt);
         deletePost?.();
       },
     },
@@ -163,11 +185,11 @@ export default function PostComponent({
         ? theme.downvote
         : theme.subtleText;
 
-  const setSeenValue = (value: boolean) => {
+  const setSeenValue = async (value: boolean) => {
     if (value) {
-      markPostSeen(post);
+      await markPostSeen(post);
     } else {
-      markPostUnseen(post);
+      await markPostUnseen(post);
     }
     rerender((prev) => prev + 1);
   };
@@ -252,8 +274,10 @@ export default function PostComponent({
             action: () => handleAction("Share"),
           },
         ]}
-        leftNames={[postSwipeOptions.right, postSwipeOptions.farRight]}
-        rightNames={[postSwipeOptions.left, postSwipeOptions.farLeft]}
+        shortLeftName={postSwipeOptions.right}
+        longLeftName={postSwipeOptions.farRight}
+        shortRightName={postSwipeOptions.left}
+        longRightName={postSwipeOptions.farLeft}
       >
         <TouchableOpacity
           accessible={true}
@@ -273,7 +297,11 @@ export default function PostComponent({
           ]}
           onPress={() => {
             setSeenValue(true);
-            pushURL(post.link);
+            if (onPostOpen) {
+              onPostOpen(post.link);
+            } else {
+              pushURL(post.link);
+            }
           }}
           onLongPress={async (e) => {
             if (e.nativeEvent.touches.length > 1) return;

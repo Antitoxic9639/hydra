@@ -8,16 +8,18 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 
 import ImageViewer from "./ImageViewer";
 import { PostInteractionContext } from "../../../../../contexts/PostInteractionContext";
 import { DataModeContext } from "../../../../../contexts/SettingsContexts/DataModeContext";
 import { ThemeContext } from "../../../../../contexts/SettingsContexts/ThemeContext";
-import useVideoMenu from "../../../../../utils/useVideoMenu";
+import useMediaSharing from "../../../../../utils/useMediaSharing";
 import { FontAwesome } from "@expo/vector-icons";
 import { PostSettingsContext } from "../../../../../contexts/SettingsContexts/PostSettingsContext";
+import DismountWhenBackgrounded from "../../../../Other/DismountWhenBackgrounded";
+import VideoCache from "../../../../../utils/VideoCache";
 
 type VideoPlayerProps = {
   source: string;
@@ -28,10 +30,7 @@ type VideoPlayerProps = {
   aspectRatio?: number;
 };
 
-const DEVICE_HEIGHT = Dimensions.get("window").height;
-const DEVICE_WIDTH = Dimensions.get("window").width;
-
-export default function VideoPlayer({
+function VideoPlayer({
   source,
   thumbnail,
   videoDownloadURL,
@@ -43,24 +42,26 @@ export default function VideoPlayer({
   const { currentDataMode } = useContext(DataModeContext);
   const { autoPlayVideos } = useContext(PostSettingsContext);
   const { interactedWithPost } = useContext(PostInteractionContext);
-  const showVideoMenu = useVideoMenu();
+  const shareMedia = useMediaSharing();
+  const { width, height } = useWindowDimensions();
 
   const [dontRenderYet, setDontRenderYet] = useState(
     currentDataMode === "lowData",
   );
   const [failedToLoadErr, setFailedToLoadErr] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPictureInPicture, setIsPictureInPicture] = useState(false);
 
-  const player = useVideoPlayer(source, (player) => {
-    player.audioMixingMode = "mixWithOthers";
-    player.volume = 0;
-    player.loop = true;
-    player.timeUpdateEventInterval = 1 / 60;
-    if (autoPlayVideos) {
-      player.play();
-    }
-  });
+  const player = useVideoPlayer(
+    VideoCache.makeCachedVideoSource(source),
+    (player) => {
+      player.audioMixingMode = "mixWithOthers";
+      player.volume = 0;
+      player.loop = true;
+      player.timeUpdateEventInterval = 1 / 60;
+      if (autoPlayVideos) {
+        player.play();
+      }
+    },
+  );
 
   const isPlaying = useEvent(player, "playingChange")?.isPlaying;
 
@@ -93,8 +94,8 @@ export default function VideoPlayer({
   });
 
   const videoRatio = aspectRatio ?? 1;
-  const heightIfFullSize = DEVICE_WIDTH / videoRatio;
-  const videoHeight = Math.min(DEVICE_HEIGHT * 0.6, heightIfFullSize);
+  const heightIfFullSize = width / videoRatio;
+  const videoHeight = Math.min(height * 0.6, heightIfFullSize);
 
   const video = useRef<VideoView>(null);
   const progress = useRef(new Animated.Value(0)).current;
@@ -156,7 +157,7 @@ export default function VideoPlayer({
               player.play();
             }}
             onLongPress={() =>
-              videoDownloadURL ? showVideoMenu(videoDownloadURL) : null
+              videoDownloadURL ? shareMedia("video", videoDownloadURL) : null
             }
           >
             {failedToLoadErr ? (
@@ -199,15 +200,12 @@ export default function VideoPlayer({
                   ref={(videoRef) => {
                     video.current = videoRef;
                   }}
-                  allowsPictureInPicture={isFullscreen || isPictureInPicture}
                   player={player}
                   style={styles.video}
                   onFullscreenEnter={() => {
-                    setIsFullscreen(true);
                     player.volume = 1;
                   }}
                   onFullscreenExit={() => {
-                    setIsFullscreen(false);
                     player.volume = 0;
                     exitedFullScreenCallback?.();
                     if (autoPlayVideos) {
@@ -218,11 +216,9 @@ export default function VideoPlayer({
                   }}
                   onPictureInPictureStop={() => {
                     player.volume = 0;
-                    setIsPictureInPicture(false);
                     exitedFullScreenCallback?.();
                   }}
                   onPictureInPictureStart={() => {
-                    setIsPictureInPicture(true);
                     setTimeout(() => {
                       player.volume = 1;
                     }, 750);
@@ -252,6 +248,14 @@ export default function VideoPlayer({
         </>
       )}
     </View>
+  );
+}
+
+export default function VideoPlayerWrapper(props: VideoPlayerProps) {
+  return (
+    <DismountWhenBackgrounded>
+      <VideoPlayer {...props} />
+    </DismountWhenBackgrounded>
   );
 }
 

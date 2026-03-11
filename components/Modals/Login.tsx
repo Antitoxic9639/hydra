@@ -5,9 +5,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -57,6 +57,11 @@ const INJECTED_JAVASCRIPT = `
     'h1.text-24.text-center.text-neutral-content-strong',
     { 'margin-top': '20px' },
   );
+
+  modifyThroughShadowDOM(
+    'auth-flow-manager',
+    { 'z-index': 1 },
+  );
 `;
 
 const ALLOWED_URLS = [
@@ -71,6 +76,8 @@ export default function Login() {
   const { logIn, doWithTempLogout } = useContext(AccountContext);
   const { setModal } = useContext(ModalContext);
   const [canShow, setCanShow] = useState(false);
+
+  const { width, height } = useWindowDimensions();
 
   const loginFinished = useRef(false);
   const resolver = useRef<((value: boolean) => void) | null>(null);
@@ -124,7 +131,7 @@ export default function Login() {
   }, [canShow]);
 
   return (
-    <View style={styles.loginContainer}>
+    <View style={[styles.loginContainer, { width, height }]}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.navbar}>
           <View style={styles.navbarTitleContainer}>
@@ -173,8 +180,6 @@ const styles = StyleSheet.create({
   loginContainer: {
     position: "absolute",
     top: 0,
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height,
     zIndex: 10,
     backgroundColor: "black",
   },
