@@ -22,6 +22,7 @@ import { useURLNavigation } from "../../utils/navigation";
 import ImageViewer from "../RedditDataRepresentations/Post/PostParts/PostMediaParts/ImageViewer";
 import ThemeImport from "../UI/Themes/ThemeImport";
 import { extractThemeFromText } from "../../utils/colors";
+import URL from "../../utils/URL";
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
 type InheritedStyles = ViewStyle & TextStyle;
@@ -126,6 +127,14 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     Wrapper = View;
     inheritedStyles.fontSize = 32;
     inheritedStyles.lineHeight = lineHeight(32);
+  } else if (element.name === "h2") {
+    Wrapper = View;
+    inheritedStyles.fontSize = 24;
+    inheritedStyles.lineHeight = lineHeight(24);
+  } else if (element.name === "h3") {
+    Wrapper = View;
+    inheritedStyles.fontSize = 20;
+    inheritedStyles.lineHeight = lineHeight(20);
   } else if (element.name === "blockquote") {
     Wrapper = View;
     wrapperStyles.backgroundColor = theme.tint;
@@ -188,6 +197,22 @@ export function Element({ element, index, inheritedStyles }: ElementProps) {
     inheritedStyles.marginVertical = 0;
     inheritedStyles.paddingHorizontal = 0;
     inheritedStyles.fontSize = 11;
+  } else if (
+    element.name === "a" &&
+    element.attribs.href?.includes("giphy.com")
+  ) {
+    const imageId = new URL(element.attribs.href)
+      .getBasePath()
+      .toString()
+      .split("/")[4];
+    Wrapper = () => (
+      <View style={styles.imageContainer}>
+        <ImageViewer
+          images={[`https://i.giphy.com/${imageId}.webp`]}
+          aspectRatio={16 / 9}
+        />
+      </View>
+    );
   } else if (
     element.name === "a" &&
     element.children[0]?.type === ElementType.Text
@@ -338,6 +363,14 @@ export function TextNodeElem({
       {remainingText}
     </Text>
   );
+
+  if (remainingText === "\n\n" || remainingText === "\n") {
+    /**
+     * This is only used in the guide pages. The new lines get stripped out
+     * ahead of time for all markdown coming from Reddit.
+     */
+    return <View style={{ height: 10 }} />;
+  }
 
   return customThemes.length > 0 ? (
     <>

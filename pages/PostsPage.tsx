@@ -21,6 +21,9 @@ import SortAndContext, {
 import { SubredditContext } from "../contexts/SubredditContext";
 import AccessFailureComponent from "../components/UI/AccessFailureComponent";
 import useOfferGalleryMode from "../utils/useOfferGalleryMode";
+import PostDetails from "./PostDetails";
+import SplitViewOptions from "../components/UI/SplitViewOptions";
+import { useSplitViewSupport } from "../utils/useSplitViewSupport";
 
 export default function PostsPage({
   route,
@@ -49,7 +52,12 @@ export default function PostsPage({
     getHideSeenURLStatus,
   } = useContext(FiltersContext);
 
+  const { splitViewEnabled, windowSupportsSplitView } = useSplitViewSupport();
+
+  const showSplitView = splitViewEnabled && windowSupportsSplitView;
+
   const [rerenderCount, rerender] = useState(0);
+  const [postDetailsURL, setPostDetailsURL] = useState<string | null>(null);
 
   const shouldFilterSeen = getHideSeenURLStatus(url);
 
@@ -62,7 +70,7 @@ export default function PostsPage({
     fullyLoaded,
     hitFilterLimit,
     accessFailure,
-  } = useRedditDataState<Post>({
+  } = useRedditDataState<Post, "postLoadingError">({
     loadData: async (after, limit) => await getPosts(url, { after, limit }),
     filterRules: [
       ...(shouldFilterSeen ? [filterSeenItems] : []),
@@ -76,9 +84,9 @@ export default function PostsPage({
 
   useOfferGalleryMode({ url, posts });
 
-  const handleScrolledPastPost = (post: Post) => {
+  const handleScrolledPastPost = async (post: Post) => {
     if (autoMarkAsSeen) {
-      markPostSeen(post);
+      await markPostSeen(post);
       rerender((prev) => prev + 1);
     }
   };
@@ -144,7 +152,7 @@ export default function PostsPage({
     >
       <AccessFailureComponent
         accessFailure={accessFailure}
-        subreddit={subreddit}
+        contentName={subreddit}
       >
         <RedditDataScroller<Post>
           ListHeaderComponent={
@@ -179,6 +187,13 @@ export default function PostsPage({
               deletePost={() => {
                 deletePosts([item]);
               }}
+              onPostOpen={
+                showSplitView
+                  ? (url) => {
+                      setPostDetailsURL(url);
+                    }
+                  : undefined
+              }
             />
           )}
           onViewableItemsChanged={(data) => {
@@ -196,6 +211,32 @@ export default function PostsPage({
               });
           }}
         />
+        {postDetailsURL && showSplitView && (
+          <>
+            <View
+              style={{
+                marginLeft: 5,
+                backgroundColor: theme.divider,
+                width: 1,
+              }}
+            />
+            <View
+              style={{
+                flex: 1.5,
+                position: "relative",
+              }}
+            >
+              <PostDetails
+                splitViewURL={postDetailsURL}
+                setSplitViewURL={setPostDetailsURL}
+              />
+              <SplitViewOptions
+                splitViewURL={postDetailsURL}
+                setSplitViewURL={setPostDetailsURL}
+              />
+            </View>
+          </>
+        )}
       </AccessFailureComponent>
     </View>
   );
@@ -205,6 +246,7 @@ const styles = StyleSheet.create({
   postsContainer: {
     flex: 1,
     justifyContent: "center",
+    flexDirection: "row",
   },
   accessFailureText: {
     fontSize: 16,

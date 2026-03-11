@@ -51,6 +51,13 @@ export default class RedditURL extends URL {
       this.url = `https://www.reddit.com${url}`;
     } else if (url.startsWith("hydra://")) {
       this.url = url;
+    } else if (url.startsWith("https://old.reddit.com")) {
+      this.url = url.replace(
+        "https://old.reddit.com",
+        "https://www.reddit.com",
+      );
+    } else if (url.startsWith("http://old.reddit.com")) {
+      this.url = url.replace("http://old.reddit.com", "https://www.reddit.com");
     } else if (url.startsWith("https://reddit.com")) {
       this.url = url.replace("https://reddit.com", "https://www.reddit.com");
     } else if (url.startsWith("https://")) {
@@ -59,6 +66,11 @@ export default class RedditURL extends URL {
       this.url = `https://${url}`;
     } else if (url.startsWith("reddit.com")) {
       this.url = `https://www.${url}`;
+    } else if (url.startsWith("https://www.reddit.com/r/u_")) {
+      this.url = url.replace(
+        "https://www.reddit.com/r/u_",
+        "https://www.reddit.com/user/",
+      );
     } else {
       throw new Error(`Weird URL being passed ${url}`);
     }
@@ -192,7 +204,7 @@ export default class RedditURL extends URL {
       return PageType.SUBREDDIT_SEARCH;
     } else if (
       relativePath.startsWith("/r/") &&
-      relativePath.includes("/wiki/")
+      (relativePath.includes("/wiki/") || relativePath.includes("/w/"))
     ) {
       return PageType.WIKI;
     } else if (
