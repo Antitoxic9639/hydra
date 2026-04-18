@@ -8,7 +8,6 @@ module.exports = {
     name: "Hydra",
     slug: "hydra",
     version: packageJson.version,
-    newArchEnabled: true,
     runtimeVersion: {
       policy: 'appVersion',
     },
@@ -62,7 +61,7 @@ module.exports = {
           "photosPermission": "$(PRODUCT_NAME) accesses your photos to upload images.",
         }
       ],
-      'expo-notifications',
+      "expo-notifications",
       [
         "expo-alternate-app-icons",
         [
@@ -97,7 +96,24 @@ module.exports = {
         {
           "folderName": "IosExtension",
         }
-      ]
+      ],
+      [
+        "expo-sharing",
+        {
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsWebUrlWithMaxCount": 1,
+            }
+          },
+        }
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-video",
+      "expo-web-browser",
     ],
     updates: {
       url: `https://u.expo.dev/${projectId}`,
